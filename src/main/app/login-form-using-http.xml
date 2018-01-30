@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
+    <http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="8081" doc:name="HTTP Listener Configuration"/>
+    <http:request-config name="HTTP_Request_Configuration" host="0.0.0.0" port="8081" doc:name="HTTP Request Configuration"/>
+    <flow name="GetLoginPageFlow">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/login" allowedMethods="GET" doc:name="loginpage"/>
+        <parse-template location="src/main/resources/login/index.html" doc:name="Login Page Content"/>
+    </flow>
+    <flow name="Dologinflow">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/login" allowedMethods="POST" doc:name="Do login"/>
+        <logger message="USer #[payload] Is trying to login" level="INFO" doc:name="Logger"/>
+        <message-filter throwOnUnaccepted="true" doc:name="Message">
+            <expression-filter expression="#[payload.username == 'mule' &amp;&amp; payload.password == 'mule']"/>
+        </message-filter>
+        <parse-template location="src/main/resources/login/loginSuccessful.html" doc:name="login successful"/>
+        <set-property propertyName="Content-Type" value="text/html; charset=UTF-8" encoding="UTF-8" mimeType="text/html" doc:name="set content type"/>
+        <catch-exception-strategy doc:name="Catch Exception Strategy">
+            <set-property propertyName="http:status" value="403" doc:name="set forbidden"/>
+            <parse-template location="C:\Users\krish\AnypointStudio\workspace\kk\login-form-using-http\src\main\resources\login\loginFailure.html" doc:name="login failed"/>
+        </catch-exception-strategy>
+    </flow>
+    <flow name="CallloginflowUsingrequester">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/requestlogin" doc:name="login using HTTP request component"/>
+        <expression-component doc:name="create map with form data"><![CDATA[payload =new hashmap();
+payload ['username']='mule';
+payload ['password']='mule';
+
+]]></expression-component>
+        <http:request config-ref="HTTP_Request_Configuration" path="/login" method="POST" doc:name="do login"/>
+    </flow>
+</mule>
